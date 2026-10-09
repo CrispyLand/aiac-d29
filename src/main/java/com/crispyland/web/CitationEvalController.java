@@ -4,6 +4,8 @@ import com.crispyland.rag.CitationEvaluator;
 import com.crispyland.rag.CitationReportGenerator;
 import com.crispyland.rag.Day25Evaluator;
 import com.crispyland.rag.Day25ReportGenerator;
+import com.crispyland.rag.Day28Evaluator;
+import com.crispyland.rag.Day28ReportGenerator;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -31,13 +33,17 @@ public class CitationEvalController {
     private static final Logger log = LoggerFactory.getLogger(CitationEvalController.class);
     private static final Path EVAL_DIR = Path.of("./data/eval/day24");
     private static final Path EVAL_DIR_25 = Path.of("./data/eval/day25");
+    private static final Path EVAL_DIR_28 = Path.of("./data/eval/day28");
 
     private final CitationEvaluator evaluator;
     private final Day25Evaluator day25Evaluator;
+    private final Day28Evaluator day28Evaluator;
 
-    public CitationEvalController(CitationEvaluator evaluator, Day25Evaluator day25Evaluator) {
+    public CitationEvalController(CitationEvaluator evaluator, Day25Evaluator day25Evaluator,
+                                  Day28Evaluator day28Evaluator) {
         this.evaluator = evaluator;
         this.day25Evaluator = day25Evaluator;
+        this.day28Evaluator = day28Evaluator;
     }
 
     @GetMapping(value = "/rag/evaluate/day24", produces = MediaType.TEXT_HTML_VALUE)
@@ -118,6 +124,46 @@ public class CitationEvalController {
             log.info("Day 25 report saved to {}", file);
         } catch (IOException e) {
             log.warn("Could not save Day 25 report: {}", e.getMessage());
+        }
+    }
+
+    // --- Day 28 endpoints ---
+
+    @GetMapping(value = "/rag/evaluate/day28", produces = MediaType.TEXT_HTML_VALUE)
+    public String evaluateDay28(@RequestParam(defaultValue = "2000") long delay) {
+        log.info("Starting Day 28 cloud vs local comparison with delay={}ms", delay);
+        Day28Evaluator.EvalResults eval = day28Evaluator.evaluateAll(delay);
+        String htmlReport = Day28ReportGenerator.generate(eval);
+        saveDay28Report(htmlReport);
+        return htmlReport;
+    }
+
+    @GetMapping(value = "/rag/evaluate/day28/latest", produces = MediaType.TEXT_HTML_VALUE)
+    public String latestDay28Report() {
+        Optional<Path> latest = findLatestHtml(EVAL_DIR_28);
+        if (latest.isEmpty()) {
+            return "<html><body style='background:#0f172a;color:#e2e8f0;font-family:sans-serif;padding:2rem'>"
+                    + "<h1>No Day 28 evaluation report found</h1>"
+                    + "<p>Run <a href='/rag/evaluate/day28' style='color:#60a5fa'>/rag/evaluate/day28</a> first.</p>"
+                    + "</body></html>";
+        }
+        try {
+            return Files.readString(latest.get());
+        } catch (IOException e) {
+            return "<html><body><h1>Error reading report</h1><p>" + e.getMessage() + "</p></body></html>";
+        }
+    }
+
+    private void saveDay28Report(String html) {
+        try {
+            Files.createDirectories(EVAL_DIR_28);
+            String timestamp = LocalDateTime.now()
+                    .format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"));
+            Path file = EVAL_DIR_28.resolve("day28-" + timestamp + ".html");
+            Files.writeString(file, html);
+            log.info("Day 28 report saved to {}", file);
+        } catch (IOException e) {
+            log.warn("Could not save Day 28 report: {}", e.getMessage());
         }
     }
 
