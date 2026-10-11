@@ -25,7 +25,8 @@ public record ChatRequest(
         List<String> stopSequences,
         String responseSchema,
         List<ToolSpec> tools,
-        List<ToolRound> rounds) {
+        List<ToolRound> rounds,
+        Double topP) {
 
     public ChatRequest {
         messages = List.copyOf(messages);
@@ -39,16 +40,25 @@ public record ChatRequest(
                        Integer maxCompletionTokens, String reasoningEffort,
                        List<String> stopSequences, String responseSchema) {
         this(model, messages, temperature, maxCompletionTokens, reasoningEffort, stopSequences,
-                responseSchema, List.of(), List.of());
+                responseSchema, List.of(), List.of(), null);
+    }
+
+    /** Full request without top_p (backwards compatible). */
+    public ChatRequest(String model, List<Message> messages, Double temperature,
+                       Integer maxCompletionTokens, String reasoningEffort,
+                       List<String> stopSequences, String responseSchema,
+                       List<ToolSpec> tools, List<ToolRound> rounds) {
+        this(model, messages, temperature, maxCompletionTokens, reasoningEffort, stopSequences,
+                responseSchema, tools, rounds, null);
     }
 
     public ChatRequest withTools(List<ToolSpec> offered) {
         return new ChatRequest(model, messages, temperature, maxCompletionTokens, reasoningEffort,
-                stopSequences, responseSchema, offered, rounds);
+                stopSequences, responseSchema, offered, rounds, topP);
     }
 
     public ChatRequest withRounds(List<ToolRound> completed) {
         return new ChatRequest(model, messages, temperature, maxCompletionTokens, reasoningEffort,
-                stopSequences, responseSchema, tools, completed);
+                stopSequences, responseSchema, tools, completed, topP);
     }
 }

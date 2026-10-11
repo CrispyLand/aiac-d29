@@ -141,6 +141,9 @@ public class CerebrasLlmClient implements LlmClient {
         if (request.temperature() != null) {
             root.put("temperature", request.temperature());
         }
+        if (request.topP() != null) {
+            root.put("top_p", request.topP());
+        }
         if (request.maxCompletionTokens() != null) {
             root.put("max_completion_tokens", request.maxCompletionTokens());
         }

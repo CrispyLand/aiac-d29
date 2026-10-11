@@ -219,18 +219,23 @@ public record AgentProperties(
     /**
      * Local LLM via Ollama's OpenAI-compatible endpoint.
      *
-     * @param enabled     whether Ollama is available as a provider choice
-     * @param endpoint    the OpenAI-compatible completions URL
-     * @param model       which model to use (must be pulled on the Ollama host)
-     * @param readTimeout how long to wait — local models on small hardware can be slow
+     * @param enabled        whether Ollama is available as a provider choice
+     * @param endpoint       the OpenAI-compatible completions URL
+     * @param model          which model to use (must be pulled on the Ollama host)
+     * @param optimizedModel a second model created via Modelfile with tuned parameters;
+     *                       used by the Day 29 evaluator as the "after" in before/after
+     * @param readTimeout    how long to wait — local models on small hardware can be slow
      */
-    public record Ollama(boolean enabled, String endpoint, String model, Duration readTimeout) {
+    public record Ollama(boolean enabled, String endpoint, String model,
+                         String optimizedModel, Duration readTimeout) {
 
         public Ollama {
             if (endpoint == null || endpoint.isBlank())
                 endpoint = "http://localhost:11434/v1/chat/completions";
             if (model == null || model.isBlank())
                 model = "qwen2.5:0.5b";
+            if (optimizedModel == null || optimizedModel.isBlank())
+                optimizedModel = model;
             if (readTimeout == null)
                 readTimeout = Duration.ofSeconds(120);
         }

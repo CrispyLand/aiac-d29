@@ -292,6 +292,7 @@ agent:
     enabled: true
     endpoint: http://localhost:11434/v1/chat/completions
     model: llama3.2:3b
+    optimized-model: llama3.2:3b-rag
     read-timeout: 300s
 
 rag:

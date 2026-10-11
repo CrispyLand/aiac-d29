@@ -1,0 +1,6 @@
+# Day 29 — Repeat penalty 1.2
+# Creates: llama3.2:3b-rp12
+# Usage:   ollama create llama3.2:3b-rp12 -f Modelfile.rp12
+
+FROM llama3.2:3b
+PARAMETER repeat_penalty 1.2

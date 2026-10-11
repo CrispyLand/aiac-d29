@@ -32,21 +32,25 @@ public class LlmProviderSwitch implements LlmClient {
     private final LlmClient ollama;
     private final String ollamaModel;
     private final AtomicReference<Provider> active;
+    private final AtomicReference<String> ollamaModelOverride;
 
     public LlmProviderSwitch(LlmClient cerebras, LlmClient ollama, String ollamaModel) {
         this.cerebras = cerebras;
         this.ollama = ollama;
         this.ollamaModel = ollamaModel;
         this.active = new AtomicReference<>(Provider.CEREBRAS);
+        this.ollamaModelOverride = new AtomicReference<>(null);
     }
 
     @Override
     public ChatResponse complete(ChatRequest request) {
         Provider current = active.get();
         if (current == Provider.OLLAMA) {
+            String model = ollamaModelOverride.get();
+            if (model == null) model = ollamaModel;
             // Override model and strip unsupported fields for Ollama
             request = new ChatRequest(
-                    ollamaModel,
+                    model,
                     request.messages(),
                     request.temperature(),
                     request.maxCompletionTokens(),
@@ -54,10 +58,24 @@ public class LlmProviderSwitch implements LlmClient {
                     request.stopSequences(),
                     "",  // response_format/json_schema not supported
                     request.tools(),
-                    request.rounds());
-            log.debug("Routing to Ollama (model={})", ollamaModel);
+                    request.rounds(),
+                    request.topP());
+            log.debug("Routing to Ollama (model={})", model);
         }
         return (current == Provider.OLLAMA ? ollama : cerebras).complete(request);
+    }
+
+    /**
+     * Temporarily overrides the Ollama model name. Pass {@code null} to reset
+     * to the configured default. Used by the Day 29 evaluator to compare
+     * baseline vs optimized models on the same Ollama instance.
+     */
+    public void setOllamaModelOverride(String model) {
+        String previous = ollamaModelOverride.getAndSet(model);
+        if ((previous == null && model != null) || (previous != null && !previous.equals(model))) {
+            log.info("Ollama model override: {} → {}", previous != null ? previous : ollamaModel,
+                    model != null ? model : ollamaModel);
+        }
     }
 
     public void switchTo(Provider provider) {

@@ -1,0 +1,6 @@
+# Day 29 — Context window limited to 4096 tokens
+# Creates: llama3.2:3b-ctx4k
+# Usage:   ollama create llama3.2:3b-ctx4k -f Modelfile.ctx4k
+
+FROM llama3.2:3b
+PARAMETER num_ctx 4096

@@ -1,0 +1,44 @@
+# Day 29 — Optimized llama3.2:3b for RAG
+#
+# Creates: llama3.2:3b-rag
+# Usage:   ollama create llama3.2:3b-rag -f Modelfile
+#
+# Key optimizations vs the stock model:
+#   1. num_ctx 4096    — stock is 131072; our RAG prompts are ~2-4K tokens,
+#                        so the KV cache is 32× smaller → much faster inference
+#   2. repeat_penalty  — reduces the repetition loops small models fall into
+#   3. top_k / top_p   — tighter sampling for factual RAG answers
+#   4. num_predict 800 — hard cap matching what the evaluator requests
+#   5. SYSTEM prompt   — short, structured instructions a 3B model can follow
+
+FROM llama3.2:3b
+
+# --- inference parameters ---
+PARAMETER temperature    0
+PARAMETER top_k          40
+PARAMETER top_p          0.9
+PARAMETER repeat_penalty 1.2
+PARAMETER num_ctx        4096
+PARAMETER num_predict    800
+
+# --- system prompt tuned for RAG ---
+SYSTEM """You answer questions about a codebase using ONLY the provided context.
+
+Rules:
+1. Use ONLY information from the context below. Never invent facts.
+2. Cite sources as [1], [2], etc. matching the context numbers.
+3. Include at least one verbatim quote from the context using > "quote" — FileName.java format.
+4. If the context is insufficient, say so. Do not guess.
+5. Be concise. No filler.
+
+Structure your answer exactly like this:
+
+### Answer
+Your answer with [1] [2] citations.
+
+### Sources
+- FileName.java | section (chunk-id)
+
+### Quotes
+> "exact words" — FileName.java
+"""
